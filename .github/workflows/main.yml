@@ -1,60 +1,54 @@
 name: CI
 
-on:
-  pull_request:
-    branches:
-      - 'master'
-      - 'main'
-  push:
-    branches:
-      - 'master'
-      - 'main'
+on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.run.target }} (${{ matrix.rust }}, nobgt ${{ matrix.nobgt }}, noprof ${{ matrix.noprof }})
     strategy:
       matrix:
-        include:
-          - name: aarch64-unknown-linux-gnu
-            target: aarch64-unknown-linux-gnu
-            nobgt: 0
-            no_tests: 1
-            tag: arm64
-          - name: x86_64-apple-darwin
-            target: x86_64-apple-darwin
-            nobgt: 0
-            no_tests: 1
-            tag: macos-13
-          - name: x86_64-unknown-linux-gnu (nightly)
-            target: x86_64-unknown-linux-gnu
-            nobgt: 0
-            no_tests: 0
-            rust: nightly
-            tag: ubuntu-latest
-          - name: x86_64-unknown-linux-gnu (stable)
-            target: x86_64-unknown-linux-gnu
-            nobgt: 0
-            no_tests: 0
-            rust: stable
-            tag: ubuntu-latest
-          - name: x86_64-unknown-linux-musl
-            target: x86_64-unknown-linux-musl
-            nobgt: 1
-            no_tests: 1
-            tag: ubuntu-latest
-          - name: aarch64-apple-darwin (stable)
-            target: aarch64-apple-darwin
-            nobgt: 0
-            no_tests: 1
+        run:
+          - target: aarch64-apple-darwin
             tag: macos-latest
-    runs-on: ${{ matrix.tag }}
+          - target: x86_64-unknown-linux-gnu
+            tag: ubuntu-latest
+        rust: [stable, nightly]
+        include:
+          - nobgt: 0
+            noprof: 0
+          - run:
+              target: aarch64-apple-darwin
+            nobgt: 1
+            noprof: 1
+          - run:
+              target: x86_64-apple-darwin
+              tag: macos-13
+            rust: stable
+            nobgt: 1
+            noprof: 1
+          - run: 
+              target: x86_64-unknown-linux-musl
+              tag: ubuntu-latest
+            rust: stable
+            nobgt: 1
+            noprof: 1
+          # - run:
+          #     target: aarch64-unknown-linux-gnu
+          #     tag: arm64
+          #   rust: stable
+          #   nobgt: 0
+          #   noprof: 0
+    runs-on: ${{ matrix.run.tag }}
     env:
-      TARGET: ${{ matrix.target }}
-      NO_JEMALLOC_TESTS: ${{ matrix.no_tests }}
+      TARGET: ${{ matrix.run.target }}
       NOBGT: ${{ matrix.nobgt }}
+      NOPROF: ${{ matrix.noprof }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: install
@@ -62,7 +56,7 @@ jobs:
         if [[ "${{ matrix.rust }}" == "nightly" ]]; then
             rustup default nightly
         fi
-        rustup target add ${{ matrix.target }}
+        rustup target add ${{ matrix.run.target }}
         if [[ "$TARGET" == "x86_64-unknown-linux-musl" ]]; then
           sudo apt install -y musl-tools
         fi
@@ -72,7 +66,7 @@ jobs:
     name: Benchmarks using x86_64-unknown-linux-gnu (nightly)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - run: rustup default nightly
@@ -81,7 +75,7 @@ jobs:
     name: Rustfmt and Clippy
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - run: rustup component add rustfmt clippy

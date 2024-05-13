@@ -17,19 +17,20 @@ then
 fi
 
 # Runs jemalloc tests when building jemalloc-sys (runs "make check"):
-if [ "${NO_JEMALLOC_TESTS}" = "1" ]
-then
-    echo "jemalloc's tests are not run"
-else
-    export JEMALLOC_SYS_RUN_JEMALLOC_TESTS=1
-fi
+export JEMALLOC_SYS_RUN_JEMALLOC_TESTS=1
 
 cargo build --target "${TARGET}"
 cargo test --target "${TARGET}"
-cargo test --target "${TARGET}" --features profiling
 cargo test --target "${TARGET}" --features debug
 cargo test --target "${TARGET}" --features stats
-cargo test --target "${TARGET}" --features 'debug profiling'
+
+if [ "${NOPROF}" = "1" ]
+then
+    echo "feature profiling is not tested"
+else
+    cargo test --target "${TARGET}" --features profiling
+    cargo test --target "${TARGET}" --features 'debug profiling'
+fi
 
 cargo test --target "${TARGET}" \
     --features unprefixed_malloc_on_supported_platforms
