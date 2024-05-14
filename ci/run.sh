@@ -26,10 +26,16 @@ fi
 
 cargo build --target "${TARGET}"
 cargo test --target "${TARGET}"
-# cargo test --target "${TARGET}" --features profiling
 cargo test --target "${TARGET}" --features debug
 cargo test --target "${TARGET}" --features stats
-# cargo test --target "${TARGET}" --features 'debug profiling'
+
+if [ "${NOPROF}" = "1" ]
+then
+    echo "feature profiling is not tested"
+else
+    cargo test --target "${TARGET}" --features profiling
+    cargo test --target "${TARGET}" --features 'debug profiling'
+fi
 
 cargo test --target "${TARGET}" \
     --features unprefixed_malloc_on_supported_platforms

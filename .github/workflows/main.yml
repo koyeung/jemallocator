@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   test:
-    name: ${{ matrix.run.target }} (${{ matrix.rust }})
+    name: ${{ matrix.run.target }} (${{ matrix.rust }}, nobgt ${{ matrix.nobgt }}, noprof ${{ matrix.noprof }})
     strategy:
       matrix:
         run:
@@ -25,7 +25,12 @@ jobs:
             rust: nightly
         include:
           - nobgt: 0
+            noprof: 0
             no_tests: 0
+          - run:
+              target: aarch64-apple-darwin
+            nobgt: 1
+            noprof: 1
           # - run:
           #     target: aarch64-unknown-linux-gnu
           #     tag: arm64
@@ -46,13 +51,15 @@ jobs:
               tier_1: false
             rust: stable
             nobgt: 1
-            no_tests: 1
+            noprof: 1
+            no_tests: 0
     runs-on: ${{ matrix.run.tag }}
     continue-on-error: ${{ ! matrix.run.tier1 }}
     env:
       TARGET: ${{ matrix.run.target }}
       NO_JEMALLOC_TESTS: 0  # ${{ matrix.no_tests }}
       NOBGT: ${{ matrix.nobgt }}
+      NOPROF: ${{ matrix.noprof }}
     steps:
     - uses: actions/checkout@v4
       with:
