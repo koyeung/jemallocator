@@ -17,12 +17,7 @@ then
 fi
 
 # Runs jemalloc tests when building jemalloc-sys (runs "make check"):
-if [ "${NO_JEMALLOC_TESTS}" = "1" ]
-then
-    echo "jemalloc's tests are not run"
-else
-    export JEMALLOC_SYS_RUN_JEMALLOC_TESTS=1
-fi
+export JEMALLOC_SYS_RUN_JEMALLOC_TESTS=1
 
 cargo build --target "${TARGET}"
 cargo test --target "${TARGET}"
